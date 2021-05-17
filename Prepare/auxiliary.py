@@ -21,7 +21,7 @@ def print_full_page_info(page):
     print('-----------')
     print(f"Links -> {page.links}")
     print('-----------')
-    print(f"Text -> {page.text}")
+    print(f"Text -> {page.value}")
     print('-----------')
     print(f"Lang links -> {page.langlinks}")
 

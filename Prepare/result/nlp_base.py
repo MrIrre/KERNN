@@ -1,12 +1,15 @@
+# -*- coding: utf-8 -*-
 import re
-import pymorphy2
-from pymorphy2.shapes import is_punctuation
-
+from time import time
 from typing import List, Dict, Tuple
 import unicodedata
 
-from time import time
+import pymorphy2
+from pymorphy2.shapes import is_punctuation
 
+import youtokentome as yttm
+
+from constants import FULL_NAME_WITH_COMMA_REGEX
 import help_module
 
 # mystem = pymystem3.Mystem()
@@ -57,9 +60,6 @@ def lemmatize_text(text, log_time=False) -> List[Tuple[str, str]]:
     return res
 
 
-FULL_NAME_WITH_COMMA_REGEX = re.compile("^([а-яА-Я -]+), (\w+) ?(\w+)?$")
-
-
 def get_search_strings(title):
     to_search = []
 
@@ -75,6 +75,7 @@ def get_search_strings(title):
         to_search.append(first_name)
         to_search.append(f"{first_name} {surname}")
         to_search.append(f"{surname} {first_name}")
+        to_search.append(f"{first_name[0]}. {surname}")
 
         if patronymic:
             to_search.append(f"{first_name} {patronymic}")
@@ -117,9 +118,9 @@ def find_key_words(key_words: List[str], text: str) -> Dict[str, List[Tuple[int,
     # print(cur_candidates)
     res_indexes = {key_word: [] for key_word in key_words}
 
-    start_time = time()
-    analyzed_text = lemmatize_text(text, log_time=True)
-    help_module.get_time(start_time, time(), "Лемматизация текста с помощью PyMorphy2")
+    # start_time = time()
+    analyzed_text = lemmatize_text(text)
+    # help_module.get_time(start_time, time(), "Лемматизация текста с помощью PyMorphy2")
     # print(analyzed_text)
 
     index = 0
@@ -164,6 +165,9 @@ def find_keyword_token_positions_in_bpe(
     KEYWORD_CODE = 1
     keywords_token_positions = []
 
+    # if len(bpe_string_tokens_text) == 0:
+    #     print(keywords_positions_in_original_text)
+
     # print(bpe_string_tokens_text[0], bpe_string_tokens_text[1], bpe_string_tokens_text[2], bpe_string_tokens_text[3], bpe_string_tokens_text[4])
 
     if bpe_string_tokens_text[0] == '<BOS>':
@@ -190,3 +194,67 @@ def find_keyword_token_positions_in_bpe(
         cur_index_in_real_text = cur_indexes[1]
 
     return keywords_token_positions
+
+
+def rfind(text: str, to_find: List[str]) -> int:
+    return max(text.rfind(i) for i in to_find)
+
+
+CHUNK_END_SYMBOLS = [' ', '\n']
+
+
+def get_chunks(text, max_chunk_size=200, step=None):
+    chunks_start_indexes = []
+    chunks = []
+
+    if step is None:
+        step = max_chunk_size // 2
+
+    chunk_start_index = 0
+    chunks_start_indexes.append(chunk_start_index)
+
+    while len(text) > max_chunk_size:
+        line_length = rfind(text[:max_chunk_size], CHUNK_END_SYMBOLS)
+        chunks.append(text[:line_length])
+
+        chunk_start_index = rfind(text[:step], CHUNK_END_SYMBOLS) + 1
+
+        step_add_val = cur_step = step
+
+        while chunk_start_index == 0:
+            step_add_val //= 2
+            cur_step += step_add_val
+
+            if step_add_val != 0:
+                chunk_start_index = rfind(text[:cur_step], CHUNK_END_SYMBOLS) + 1
+            else:
+                chunk_start_index = line_length
+
+        chunks_start_indexes.append(chunks_start_indexes[len(chunks_start_indexes) - 1] + chunk_start_index)
+        text = text[chunk_start_index:]
+
+    if not text.isspace():
+        chunks.append(text)
+
+    return chunks, chunks_start_indexes
+
+
+def get_nn_data(tokenizer, entity_to_search, text, text_chunk_size=None):
+    if text_chunk_size is not None:
+        chunks = get_chunks(text, max_chunk_size=text_chunk_size)
+        chunks = chunks[0]
+    else:
+        raise NotImplementedError
+
+    tokenized_chunks = tokenizer.encode(chunks)
+    # help_module.get_time(start_time, time(), "Токенизация текста(chunks)")
+    symbol_tokenized_chunks = list(map(lambda chunk: [tokenizer.id_to_subword(token) for token in chunk], tokenized_chunks))
+    joined_symbol_tokenized_chunks = list(map(lambda chunk: ''.join(chunk), symbol_tokenized_chunks))
+    space_replaced_joined_symbol_tokenized_chunks = list(map(lambda chunk: chunk.replace('▁', ' '), joined_symbol_tokenized_chunks))
+
+    res_indexes = list(map(lambda chunk: find_key_words(entity_to_search, chunk), space_replaced_joined_symbol_tokenized_chunks))
+    all_indexes = list(map(lambda indexes: help_module.flatten(indexes.values()), res_indexes))
+
+    token_positions_in_tokenized_chunks = list(map(lambda info: find_keyword_token_positions_in_bpe(info[1], info[0]), zip(symbol_tokenized_chunks, all_indexes)))
+
+    return tokenized_chunks, token_positions_in_tokenized_chunks

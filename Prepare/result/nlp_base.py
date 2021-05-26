@@ -7,10 +7,8 @@ import unicodedata
 import pymorphy2
 from pymorphy2.shapes import is_punctuation
 
-import youtokentome as yttm
-
-from constants import FULL_NAME_WITH_COMMA_REGEX
-import help_module
+from Prepare.constants import FULL_NAME_WITH_COMMA_REGEX
+from Prepare import help_module
 
 # mystem = pymystem3.Mystem()
 pymorph = pymorphy2.MorphAnalyzer()
@@ -32,6 +30,14 @@ TOKEN_REGEX = re.compile(r'([^\w_-]|[+])', re.UNICODE)
 
 def word_tokenize(text, _split=TOKEN_REGEX.split):
     return [t for t in _split(text) if t]
+
+
+def lemmatize_word(word: str) -> Tuple[str, str]:
+    if not is_punctuation(word) and not word.isspace():
+        normal_form = pymorph.parse(word)[0].normal_form
+        return word, normal_form
+
+    return word, None
 
 
 def lemmatize_text(text, log_time=False) -> List[Tuple[str, str]]:
@@ -64,7 +70,7 @@ def get_search_strings(title):
     to_search = []
 
     word_infos = lemmatize_text(title)
-    words = list(filter(lambda x: x[1] if x[1] is not None else x[0], word_infos))
+    words = list(filter(lambda x: x[1] if x[1] is not None else x[0], word_infos))  # TODO: check
 
     full_name_res = FULL_NAME_WITH_COMMA_REGEX.findall(title)
 

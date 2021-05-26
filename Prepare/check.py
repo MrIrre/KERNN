@@ -2,7 +2,8 @@ import youtokentome as yttm
 
 from time import time
 
-from Prepare.result import wiki_downloader, nlp_base, help_module
+from Prepare.result import wiki_downloader, nlp_base
+from Prepare import help_module
 
 start_time = time()
 

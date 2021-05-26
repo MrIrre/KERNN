@@ -5,43 +5,43 @@ import math
 
 
 class MyNN(torch.nn.Module):
-    def __init__(self, vocab_size, max_in_length, embedding_size=64):
+    def __init__(self, vocab_size, embedding_size=64):
         super(MyNN, self).__init__()
         self.embeddings = torch.nn.Embedding(num_embeddings=vocab_size, embedding_dim=embedding_size)  # padding_idx = 0 ???
 
         self.conv1 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**0, padding=2**0)
         self.act1 = torch.nn.ReLU()
-        self.norm1 = torch.nn.LayerNorm(max_in_length)
-        self.dropout1 = torch.nn.Dropout(p=0.5)
+        # self.norm1 = torch.nn.LayerNorm(max_in_length)
+        self.dropout1 = torch.nn.Dropout(p=0.3)
 
         self.conv2 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**1, padding=2**1)
         self.act2 = torch.nn.ReLU()
-        self.norm2 = torch.nn.LayerNorm(max_in_length)
-        self.dropout2 = torch.nn.Dropout(p=0.5)
+        # self.norm2 = torch.nn.LayerNorm(max_in_length)
+        self.dropout2 = torch.nn.Dropout(p=0.3)
 
         self.conv3 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**2, padding=2**2)
         self.act3 = torch.nn.ReLU()
-        self.norm3 = torch.nn.LayerNorm(max_in_length)
-        self.dropout3 = torch.nn.Dropout(p=0.5)
+        # self.norm3 = torch.nn.LayerNorm(max_in_length)
+        self.dropout3 = torch.nn.Dropout(p=0.3)
 
         self.conv4 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**3, padding=2**3)
         self.act4 = torch.nn.ReLU()
-        self.norm4 = torch.nn.LayerNorm(max_in_length)
-        self.dropout4 = torch.nn.Dropout(p=0.5)
+        # self.norm4 = torch.nn.LayerNorm(max_in_length)
+        self.dropout4 = torch.nn.Dropout(p=0.3)
 
         self.conv5 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**4, padding=2**4)
         self.act5 = torch.nn.ReLU()
-        self.norm5 = torch.nn.LayerNorm(max_in_length)
-        self.dropout5 = torch.nn.Dropout(p=0.5)
+        # self.norm5 = torch.nn.LayerNorm(max_in_length)
+        self.dropout5 = torch.nn.Dropout(p=0.3)
 
         self.conv6 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**5, padding=2**5)
         self.act6 = torch.nn.ReLU()
-        self.norm6 = torch.nn.LayerNorm(max_in_length)
-        self.dropout6 = torch.nn.Dropout(p=0.5)
+        # self.norm6 = torch.nn.LayerNorm(max_in_length)
+        self.dropout6 = torch.nn.Dropout(p=0.3)
 
         self.final_conv = torch.nn.Conv1d(in_channels=64, out_channels=1, kernel_size=1)  # TODO: CHECK
-        self.final_dropout = torch.nn.Dropout(p=0.5)
-        self.final_conv2 = torch.nn.Conv1d(in_channels=256, out_channels=1, kernel_size=1)
+        # self.final_dropout = torch.nn.Dropout(p=0.5)
+        # self.final_conv2 = torch.nn.Conv1d(in_channels=256, out_channels=1, kernel_size=1)
 
         # self.softmax = torch.nn.Softmax(dim=1)
         self.sigmoid = torch.nn.Sigmoid()
@@ -53,10 +53,6 @@ class MyNN(torch.nn.Module):
         # print(f"Размер батча = {batch_size}")
         # print(f"Размер наибольшего текста = {max_text_size}")
         # print(f"Длина чанка максимальной длины = {max_chunk_size}")
-
-        # res = []
-        #
-        # for x in input:
 
         # print(input)
         x = input.view(batch_size * max_text_size, max_chunk_size)  # BatchSize*MaxTextLen x MaxChunkLen | example: [32*20, 100]
@@ -139,16 +135,16 @@ class MyNN(torch.nn.Module):
         return res
 
 
-class ThresholdFunc(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, tensor, threshold):
-        return (tensor >= threshold).float()
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        grad_input = grad_output.clone()
-        # print('Custom backward called!')
-        return grad_input, None
-
-
-threshold_func = ThresholdFunc.apply
+# class ThresholdFunc(torch.autograd.Function):
+#     @staticmethod
+#     def forward(ctx, tensor, threshold):
+#         return (tensor >= threshold).float()
+#
+#     @staticmethod
+#     def backward(ctx, grad_output):
+#         grad_input = grad_output.clone()
+#         # print('Custom backward called!')
+#         return grad_input, None
+#
+#
+# threshold_func = ThresholdFunc.apply

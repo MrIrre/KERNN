@@ -1,19 +1,20 @@
-import constants
+from Prepare import constants
 from time import time as time
 from neural_network import MyNN
-import nlp_base
 import torch
 import youtokentome as yttm
 
 
-tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_22000')
+vocab_size = 50000
+
+tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
 vocab_size = len(tokenizer.vocab())
 device = torch.device('cuda')
 TEXT_CHUNK_SIZE = 200
 
-nn = MyNN(vocab_size, max_in_length=104, embedding_size=64)
+nn = MyNN(vocab_size, embedding_size=64)
 
-nn.load_state_dict(torch.load('./nn_models/nn_model_1621162343.2260022.pth'))
+nn.load_state_dict(torch.load('./nn_models/nn_model_50000_1621334588.2348585.pth'))
 nn.eval()
 nn.to(device)
 
@@ -36,7 +37,7 @@ pred = pred[0][0]
 
 torch.set_printoptions(profile='default', sci_mode=False)
 
-print(pred)
+# print(pred)
 
 hue = 0
 saturation = 100

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import List
-
-from constants import FULL_NAME_WITH_COMMA_REGEX
+from Prepare.constants import FULL_NAME_WITH_COMMA_REGEX
 import wikipediaapi
 
 

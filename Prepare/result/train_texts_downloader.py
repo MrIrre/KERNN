@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from wiki_downloader import WikiDownloader
-import constants
+from Prepare import constants
 
 wiki_downloader = WikiDownloader()
 

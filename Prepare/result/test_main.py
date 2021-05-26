@@ -8,7 +8,7 @@ import torch.nn.functional as F
 
 import youtokentome as yttm
 
-import constants
+from Prepare import constants
 import json
 from wiki_dataset import WikiTextDataset
 from neural_network import MyNN
@@ -19,14 +19,16 @@ from utils import train_eval_loop
 DEVICE = 'cuda'
 assert DEVICE in {'cpu', 'cuda'}
 
-tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_22000')
+vocab_size = 50000
+
+tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
 # print(tokenizer.vocab())
 
 
 vocab_size = len(tokenizer.vocab())
 all_nn_data = []
 
-with open('nn_data/all_nn_data_22000', 'r', encoding='utf-8') as f:
+with open('nn_data/all_nn_data_' + str(vocab_size), 'r', encoding='utf-8') as f:
     for line in f:
         cur_json = json.loads(line)
         cur_input = cur_json['input']
@@ -37,7 +39,7 @@ with open('nn_data/all_nn_data_22000', 'r', encoding='utf-8') as f:
 MAX_TEXT_SIZE = max(map(lambda text: len(text[0]), all_nn_data))  # размер самого большого текста
 MAX_CHUNK_SIZE = max(map(lambda cur_data: max(map(lambda chunk: len(chunk), cur_data[0])),
                          all_nn_data))  # размер самого большого чанка среди всех текстов
-nn = MyNN(vocab_size, max_in_length=MAX_CHUNK_SIZE, embedding_size=64)
+nn = MyNN(vocab_size, embedding_size=64)
 print('Количество параметров', sum(np.product(t.shape) for t in nn.parameters()))
 
 ALL_SPLIT = int(len(all_nn_data) * 0.8)
@@ -86,7 +88,7 @@ def lr_scheduler(optim):
                                                  lr_scheduler_ctor=lr_scheduler,
                                                  device=DEVICE,
                                                  shuffle_train=True)
-torch.save(best_nn_model.state_dict(), 'nn_models/nn_model_' + str(time()) + '.pth')
+torch.save(best_nn_model.state_dict(), f'nn_models/nn_model_{str(vocab_size)}_{str(time())}.pth')
 
 
 device = torch.device(DEVICE)

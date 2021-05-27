@@ -66,16 +66,16 @@ def lemmatize_text(text, log_time=False) -> List[Tuple[str, str]]:
     return res
 
 
-def get_search_strings(title):
-    to_search = []
+def get_search_strings(title: str, lemmatized_title: List[str], title_tf_idf: Dict[str, float]) -> List[str]:
+    # to_search =
 
-    word_infos = lemmatize_text(title)
-    words = list(filter(lambda x: x[1] if x[1] is not None else x[0], word_infos))  # TODO: check
+    to_search = lemmatized_title  # TODO: check
+    to_search.append(title.lower())
 
     full_name_res = FULL_NAME_WITH_COMMA_REGEX.findall(title)
 
     if full_name_res:
-        surname, first_name, patronymic = full_name_res[0]
+        surname, first_name, patronymic = full_name_res[0].lower()
 
         to_search.append(surname)
         to_search.append(first_name)
@@ -88,9 +88,6 @@ def get_search_strings(title):
             to_search.append(f"{surname} {first_name} {patronymic}")
             to_search.append(f"{first_name} {patronymic} {surname}")
             to_search.append(f"{first_name[0]}. {patronymic[0]}. {surname}")
-    else:
-        print(words)
-        # TODO: Think about it
 
     return to_search
 

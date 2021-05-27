@@ -73,10 +73,9 @@ with open(file='result-json-one-file_only-articles/AA/wiki_00', mode='r', encodi
 
                 title_with_brackets = TITLE_WITH_BRACKETS_REGEX.match(formatted_title)
                 if title_with_brackets is not None:
-                    cur_json['title'] = title_with_brackets.group(0)
-                else:
-                    cur_json['title'] = formatted_title
+                    formatted_title = title_with_brackets.group(0)
 
+                cur_json['title'] = formatted_title
                 cur_json['text'] = formatted_text
                 cur_json['lemmatized_title'] = get_lemmatized_words(formatted_title)
                 cur_json['lemmatized_words_counter'] = collections.Counter(get_lemmatized_words(formatted_text))

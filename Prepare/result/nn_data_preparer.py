@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from Prepare import constants
+import math
 import ujson
 import nlp_base
 import os
@@ -40,17 +41,24 @@ try:
                 page_text = cur_json['text']
                 page_lemmatized_title = cur_json['lemmatized_title']  # Maybe is empty
 
+                entities_to_search = []
+
                 if page_lemmatized_title:
                     # Если есть леммы из заголовка (то у них есть и tf-idf и они встречались в своей статье ТОЧНО)
+                    title_tf = cur_json['title_tf']
+                    title_idf = cur_json['title_idf']
 
+                    # len(title_tf) == len(title_idf) всегда
+                    title_tf_idf = {lemma: title_tf[lemma] * math.log10(title_idf[lemma]) for lemma in title_tf}
+                    entities_to_search = nlp_base.get_search_strings(page_title, page_lemmatized_title, title_tf_idf)
 
                     pass
                 else:  # Если леммы из заголовка не были взяты
                     raise NotImplementedError
 
-                entity_to_search = nlp_base.get_search_strings(page_title)
 
-                if not entity_to_search:
+
+                if not entities_to_search:
                     without_answer_in_text += 1
                     continue
 

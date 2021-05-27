@@ -2,6 +2,7 @@
 import re
 import string
 from Prepare import help_module
+from Prepare.result import nlp_base
 
 import pymorphy2
 from pymorphy2.shapes import is_punctuation
@@ -29,26 +30,58 @@ def lemmatize_word(word: str):
 def extract_words(s):
     return re.findall(r'\b\S+\b', s)
 
+def lemmatize_text(text):
+    res = []
+
+    for token in word_tokenize(text):
+        if not is_punctuation(token) and not token.isspace():
+            normal_form = pymorph.parse(token)[0].normal_form
+            res.append((token, normal_form))
+        else:
+            res.append((token, None))
+
+    return res
+
 
 # str = 'This is a string, with words!'
+title = 'Александр Сергеевич Пушкин'
+lemmatized_title = ['александр', 'сергеевич', 'пушкин']
+
 str = '''
-Facebook написан на C++, PHP (HHVM).
-[Ghbdtn|Privet]
-[[Ghbdtn123|123Privet]]
-(You Drive Me) Crazy
-http://www.stackoverflow.ru/
-"Hello!"
-*!OLOLO*
-"qwerty)
-[HEHEHE]
-«РУДА»
-Hello — red
-(G)I-DLE
+А.С.Пушкина
+Пушкин
+Александра Пушкина
+А. Пушкином
+об Александре
+с Александром Сергеевичем Пушкиным
 '''
 
-words = extract_words(str)
-lemmas = list(filter(None, map(lambda word: lemmatize_word(word)[1], words)))
+# nlp_base.get_search_strings(title, lemmatized_title)
+import ujson
+import math
 
-print(words)
+i = 0
 
-print(lemmas)
+with open('texts_to_train/all-wiki-pages_with_tfidf.json', 'r', encoding='utf-8') as f:
+    for line in f:
+        cur_json = ujson.loads(line)
+
+        if cur_json['lemmatized_title']:
+            tf_idf = {lemma: cur_json['title_tf'][lemma] * math.log2(cur_json['title_idf'][lemma]) for lemma in cur_json['title_tf']}
+            print(f"TF-IDF - {tf_idf}")
+            print("--------------------------------")
+        i += 1
+
+        if i % 20000 == 0:
+            print(i)
+
+print(i)
+
+
+# words = lemmatize_text(str)
+# lemmas = list(map(lambda lemma_info: lemma_info[1] if lemma_info[1] is not None else lemma_info[0], words))
+#
+# # print(words)
+#
+# print(lemmas)
+# print(''.join(lemmas))

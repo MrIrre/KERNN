@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
+from collections import Counter
 import re
 from time import time
-from typing import List, Dict, Tuple
+from typing import Dict, List, Set, Tuple
 import unicodedata
 
 import pymorphy2
@@ -66,28 +67,38 @@ def lemmatize_text(text, log_time=False) -> List[Tuple[str, str]]:
     return res
 
 
-def get_search_strings(title: str, lemmatized_title: List[str], title_tf_idf: Dict[str, float]) -> List[str]:
-    # to_search =
+TF_IDF_THRESHOLD = 0.02
 
-    to_search = lemmatized_title  # TODO: check
-    to_search.append(title.lower())
+
+def get_search_strings(title: str, lemmatized_title=None, title_tf_idf=None):
+    to_search = set()
+
+    if lemmatized_title:
+        to_search = set(lemmatized_title)
+
+    if title_tf_idf is not None and title_tf_idf:
+        title_tf_idf_counter = Counter(title_tf_idf)
+        to_search = {title for title in lemmatized_title if title_tf_idf_counter[title] >= TF_IDF_THRESHOLD}
 
     full_name_res = FULL_NAME_WITH_COMMA_REGEX.findall(title)
 
     if full_name_res:
-        surname, first_name, patronymic = full_name_res[0].lower()
+        surname, first_name, patronymic = [x.lower() for x in full_name_res[0]]
 
-        to_search.append(surname)
-        to_search.append(first_name)
-        to_search.append(f"{first_name} {surname}")
-        to_search.append(f"{surname} {first_name}")
-        to_search.append(f"{first_name[0]}. {surname}")
+        to_search.add(surname)
+        to_search.add(first_name)  # TODO: Нужно ли?
+        to_search.add(f"{first_name} {surname}")
+        to_search.add(f"{surname} {first_name}")
+        # to_search.add(f"{first_name[0]}. {surname}")
 
         if patronymic:
-            to_search.append(f"{first_name} {patronymic}")
-            to_search.append(f"{surname} {first_name} {patronymic}")
-            to_search.append(f"{first_name} {patronymic} {surname}")
-            to_search.append(f"{first_name[0]}. {patronymic[0]}. {surname}")
+            to_search.add(f"{first_name} {patronymic}")
+            to_search.add(f"{surname} {first_name} {patronymic}")
+            to_search.add(f"{first_name} {patronymic} {surname}")
+            to_search.add(f"{first_name[0]}. {patronymic[0]}. {surname}")
+    else:
+        to_search.add(title.lower())
+        to_search.add(''.join(lemma_info[1] if lemma_info[1] is not None else lemma_info[0] for lemma_info in lemmatize_text(title)))
 
     return to_search
 
@@ -111,15 +122,15 @@ def unaccentify_text(text):
     return pattern.sub(replacer, source)
 
 
-def get_lemma_info(word: str) -> Tuple[str, List[str], int, int]:
-    splitted_lemma = list(map(lambda lemma_info: lemma_info[1] if lemma_info[1] is not None else lemma_info[0], lemmatize_text(word)))
-    return word, splitted_lemma, 0, 0
+def get_lemma_info(lemma: str) -> Tuple[str, List[str], int, int]:
+    splitted_lemma = word_tokenize(lemma)  # list(map(lambda lemma_info: lemma_info[1] if lemma_info[1] is not None else lemma_info[0], lemmatize_text(word)))
+    return lemma, splitted_lemma, 0, 0
 
 
-def find_key_words(key_words: List[str], text: str) -> Dict[str, List[Tuple[int, int]]]:
-    cur_candidates = {word_info[0]: (word_info[1], word_info[2], word_info[3]) for word_info in map(get_lemma_info, key_words)}
+def find_key_words(key_words_with_infos: Dict[str, Tuple[List[str], int, int]], text: str) -> Set[Tuple[int, int]]:
+    cur_candidates = key_words_with_infos
     # print(cur_candidates)
-    res_indexes = {key_word: [] for key_word in key_words}
+    res_indexes = set()  # {key_word: [] for key_word in key_words}
 
     # start_time = time()
     analyzed_text = lemmatize_text(text)
@@ -145,7 +156,7 @@ def find_key_words(key_words: List[str], text: str) -> Dict[str, List[Tuple[int,
             if (cur_word_lexeme == splitted_lexeme[index_in_splitted_lexeme]
                     or cur_word_text == splitted_lexeme[index_in_splitted_lexeme]):
                 if index_in_splitted_lexeme == len(splitted_lexeme) - 1:
-                    res_indexes[candidate].append((index - cur_length, index + cur_word_text_length))
+                    res_indexes.add((index - cur_length, index + cur_word_text_length))
                     cur_candidates[candidate] = (splitted_lexeme, 0, 0)
                 else:
                     cur_candidates[candidate] = (splitted_lexeme, index_in_splitted_lexeme + 1, cur_length + cur_word_text_length)
@@ -255,8 +266,9 @@ def get_nn_data(tokenizer, entity_to_search, text, text_chunk_size=None):
     joined_symbol_tokenized_chunks = list(map(lambda chunk: ''.join(chunk), symbol_tokenized_chunks))
     space_replaced_joined_symbol_tokenized_chunks = list(map(lambda chunk: chunk.replace('▁', ' '), joined_symbol_tokenized_chunks))
 
-    res_indexes = list(map(lambda chunk: find_key_words(entity_to_search, chunk), space_replaced_joined_symbol_tokenized_chunks))
-    all_indexes = list(map(lambda indexes: help_module.flatten(indexes.values()), res_indexes))
+    key_words_with_infos = {word_info[0]: (word_info[1], word_info[2], word_info[3]) for word_info in map(get_lemma_info, entity_to_search)}
+    all_indexes = list(map(lambda chunk: find_key_words(key_words_with_infos, chunk), space_replaced_joined_symbol_tokenized_chunks))
+    # all_indexes = list(map(lambda indexes: help_module.flatten(indexes), res_indexes))
 
     token_positions_in_tokenized_chunks = list(map(lambda info: find_keyword_token_positions_in_bpe(info[1], info[0]), zip(symbol_tokenized_chunks, all_indexes)))
 

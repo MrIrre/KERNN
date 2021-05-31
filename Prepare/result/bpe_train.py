@@ -2,7 +2,7 @@
 from Prepare import constants
 import youtokentome as yttm
 
-vocab_size = 50000
+vocab_size = 15000
 yttm.BPE.train(data=constants.TRAIN_TEXTS_FILENAME, vocab_size=vocab_size, model=constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
 
 # tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME)

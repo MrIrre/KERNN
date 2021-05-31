@@ -171,7 +171,7 @@ def find_key_words(key_words_with_infos: Dict[str, Tuple[List[str], int, int]], 
 
 # TODO: skip { <UNK>, <PAD> }?
 def find_keyword_token_positions_in_bpe(
-        keywords_positions_in_original_text: List[Tuple[int, int]],
+        keywords_positions_in_original_text: Set[Tuple[int, int]],
         bpe_string_tokens_text: List[str],
         start_index_in_real_text: int = 0
 ) -> List[int]:
@@ -214,7 +214,7 @@ def rfind(text: str, to_find: List[str]) -> int:
     return max(text.rfind(i) for i in to_find)
 
 
-CHUNK_END_SYMBOLS = [' ', '\n']
+CHUNK_END_SYMBOLS = [' ', '<n>']
 
 
 def get_chunks(text, max_chunk_size=200, step=None):
@@ -229,6 +229,10 @@ def get_chunks(text, max_chunk_size=200, step=None):
 
     while len(text) > max_chunk_size:
         line_length = rfind(text[:max_chunk_size], CHUNK_END_SYMBOLS)
+
+        if line_length <= 0:
+            line_length = max_chunk_size
+
         chunks.append(text[:line_length])
 
         chunk_start_index = rfind(text[:step], CHUNK_END_SYMBOLS) + 1
@@ -253,7 +257,11 @@ def get_chunks(text, max_chunk_size=200, step=None):
     return chunks, chunks_start_indexes
 
 
-def get_nn_data(tokenizer, entity_to_search, text, text_chunk_size=None):
+TOO_MANY_SPACES_OR_NEW_LINES_REGEX = re.compile(r'\n+')
+
+
+def get_nn_data(tokenizer, entity_to_search, text, text_chunk_size=None, with_new_lines=None):
+    text = TOO_MANY_SPACES_OR_NEW_LINES_REGEX.sub('<n>', text)
     if text_chunk_size is not None:
         chunks = get_chunks(text, max_chunk_size=text_chunk_size)
         chunks = chunks[0]
@@ -270,6 +278,23 @@ def get_nn_data(tokenizer, entity_to_search, text, text_chunk_size=None):
     all_indexes = list(map(lambda chunk: find_key_words(key_words_with_infos, chunk), space_replaced_joined_symbol_tokenized_chunks))
     # all_indexes = list(map(lambda indexes: help_module.flatten(indexes), res_indexes))
 
-    token_positions_in_tokenized_chunks = list(map(lambda info: find_keyword_token_positions_in_bpe(info[1], info[0]), zip(symbol_tokenized_chunks, all_indexes)))
+    # non_empty_chunks_with_indexes = list(filter(lambda chunk_and_chunk_indexes: chunk_and_chunk_indexes[1], zip(symbol_tokenized_chunks, all_indexes)))
+    non_empty_chunks_with_indexes = [
+        (tokenized_chunk, symbol_tokenized_chunk, chunk_indexes)
+        for tokenized_chunk, symbol_tokenized_chunk, chunk_indexes
+        in zip(tokenized_chunks, symbol_tokenized_chunks, all_indexes) if chunk_indexes
+    ]
 
-    return tokenized_chunks, token_positions_in_tokenized_chunks
+    if not non_empty_chunks_with_indexes:
+        return None
+
+    # token_positions_in_tokenized_chunks = list(map(lambda chunk_with_indexes: find_keyword_token_positions_in_bpe(chunk_with_indexes[1], chunk_with_indexes[0]), non_empty_chunks_with_indexes))
+    filtered_tokenized_chunks, filtered_token_positions = zip(*[
+        (tokenized_chunk, find_keyword_token_positions_in_bpe(chunk_indexes, symbol_tokenized_chunk))
+        for tokenized_chunk, symbol_tokenized_chunk, chunk_indexes
+        in non_empty_chunks_with_indexes
+    ])
+
+    return filtered_tokenized_chunks, filtered_token_positions
+
+

@@ -1,7 +1,5 @@
-from typing import Any
-
+# -*- coding: utf-8 -*-
 import torch
-import math
 
 
 class MyNN(torch.nn.Module):
@@ -12,32 +10,32 @@ class MyNN(torch.nn.Module):
         self.conv1 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**0, padding=2**0)
         self.act1 = torch.nn.ReLU()
         # self.norm1 = torch.nn.LayerNorm(max_in_length)
-        self.dropout1 = torch.nn.Dropout(p=0.3)
+        self.dropout1 = torch.nn.Dropout(p=0.5)
 
         self.conv2 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**1, padding=2**1)
         self.act2 = torch.nn.ReLU()
         # self.norm2 = torch.nn.LayerNorm(max_in_length)
-        self.dropout2 = torch.nn.Dropout(p=0.3)
+        self.dropout2 = torch.nn.Dropout(p=0.5)
 
         self.conv3 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**2, padding=2**2)
         self.act3 = torch.nn.ReLU()
         # self.norm3 = torch.nn.LayerNorm(max_in_length)
-        self.dropout3 = torch.nn.Dropout(p=0.3)
+        self.dropout3 = torch.nn.Dropout(p=0.5)
 
         self.conv4 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**3, padding=2**3)
         self.act4 = torch.nn.ReLU()
         # self.norm4 = torch.nn.LayerNorm(max_in_length)
-        self.dropout4 = torch.nn.Dropout(p=0.3)
+        self.dropout4 = torch.nn.Dropout(p=0.5)
 
         self.conv5 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**4, padding=2**4)
         self.act5 = torch.nn.ReLU()
         # self.norm5 = torch.nn.LayerNorm(max_in_length)
-        self.dropout5 = torch.nn.Dropout(p=0.3)
+        self.dropout5 = torch.nn.Dropout(p=0.5)
 
         self.conv6 = torch.nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, dilation=2**5, padding=2**5)
         self.act6 = torch.nn.ReLU()
         # self.norm6 = torch.nn.LayerNorm(max_in_length)
-        self.dropout6 = torch.nn.Dropout(p=0.3)
+        self.dropout6 = torch.nn.Dropout(p=0.5)
 
         self.final_conv = torch.nn.Conv1d(in_channels=64, out_channels=1, kernel_size=1)  # TODO: CHECK
         # self.final_dropout = torch.nn.Dropout(p=0.5)
@@ -47,19 +45,18 @@ class MyNN(torch.nn.Module):
         self.sigmoid = torch.nn.Sigmoid()
 
     def forward(self, input):
-        # InputSize = BatchSize x MaxTextLen x MaxChunkLen | example: [32, 20, 100]
+        # InputSize = BatchSize x MaxChunkLen | example: [32, 200]
 
-        batch_size, max_text_size, max_chunk_size = input.shape
+        # batch_size, max_chunk_size = input.shape
         # print(f"Размер батча = {batch_size}")
         # print(f"Размер наибольшего текста = {max_text_size}")
         # print(f"Длина чанка максимальной длины = {max_chunk_size}")
 
         # print(input)
-        x = input.view(batch_size * max_text_size, max_chunk_size)  # BatchSize*MaxTextLen x MaxChunkLen | example: [32*20, 100]
 
-        x = self.embeddings(x)  # BatchSize*MaxTextLen x MaxChunkLen x EmbedSize | example: [32*20, 200, 64]
+        x = self.embeddings(input)  # BatchSize x MaxChunkLen x EmbedSize | example: [32, 200, 64]
         # print(x)
-        x = x.permute(0, 2, 1)  # BatchSize*MaxTextLen x EmbedSize x MaxInLen | example: [32*20, 64, 200]
+        x = x.permute(0, 2, 1)  # BatchSize x EmbedSize x MaxInLen | example: [32, 64, 200]
 
         #print(f"Перед слоями размерность тензора - {x.shape}")
         x = self.conv1(x)
@@ -102,7 +99,7 @@ class MyNN(torch.nn.Module):
 
         #print(f"После 6 слоя размерность тензора - {x.shape}")
 
-        x = self.final_conv(x)  # BatchSize*MaxTextLen x 1 x MaxInLen | example: [32*20, 1, 200]
+        x = self.final_conv(x)  # BatchSize x 1 x MaxInLen | example: [32, 1, 200]
 
         # print('----')
 
@@ -111,8 +108,8 @@ class MyNN(torch.nn.Module):
 
         # print(f"После финальной одномерной свертки размерность тензора - {x.shape}")
 
-        x = x.squeeze(1)  # BatchSize*MaxTextLen x MaxInLen | example: [32*20, 200]
-        x = x.view(batch_size, max_text_size, max_chunk_size)  # BatchSize x MaxTextLen x MaxInLen | example: [32, 20, 200]
+        x = x.squeeze(1)  # BatchSize x MaxInLen | example: [32, 200]
+        # x = x.view(batch_size, max_chunk_size)  # BatchSize x MaxInLen | example: [32, 200]
 
         x = self.sigmoid(x)
         # print(x)
@@ -122,17 +119,15 @@ class MyNN(torch.nn.Module):
         # x = threshold_func(x, 0.3)
 
         # res.append(x)
-
-        res = x
         # res = torch.stack(res)
 
-        return res
+        return x
 
-    @staticmethod
-    def get_save_padding(in_channels, out_channels, kernel_size, stride):
-        res = math.ceil((out_channels * stride - (in_channels - kernel_size + stride)) / 2)
-        # print(res)
-        return res
+    # @staticmethod
+    # def get_save_padding(in_channels, out_channels, kernel_size, stride):
+    #     res = math.ceil((out_channels * stride - (in_channels - kernel_size + stride)) / 2)
+    #     # print(res)
+    #     return res
 
 
 # class ThresholdFunc(torch.autograd.Function):

@@ -54,9 +54,10 @@ def get_chunk_id(cur_chunk_string):
     return int(cur_chunk_string[(cur_chunk_string.rfind(',') + 1):cur_chunk_string.rfind(']')])
 
 
-filename = 'all_nn_data_15000_with_tf-idf-final_3'
-from_file = 'nn_data/' + filename
-from_file_ids = 'nn_data/' + filename + '_ids'
+filename = 'all_nn_data_15000_with_tf-idf-complete_3'
+newlines = 'with_newlines'
+from_file = 'nn_data/' + newlines + '/' + filename
+from_file_ids = 'nn_data/' + newlines + '/' + filename + '_ids'
 
 res_train_file = 'nn_data/result_data/train/' + filename + '_train_shuffled'
 res_val_file = 'nn_data/result_data/validation/' + filename + '_val_shuffled'

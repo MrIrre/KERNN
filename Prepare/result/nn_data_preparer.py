@@ -16,19 +16,19 @@ class ContinueOuterLoop(Exception):
 vocab_size = 15000  # 20000 25000 50000
 
 bpe_tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
-CHUNK_SIZE = 200
+CHUNK_SIZE = 450
 
-cur_index = start_index = 0
+cur_index = start_index = 750000
 written_chunks = 0
 with_answer_in_text = 0
 without_answer_in_text = 0
 with_exception = 0
-count_to_prepare = 250000
+count_to_prepare = 1500000
 
 file_with_texts = '../texts_to_train/all-wiki-pages_with_tfidf.json'
 
 nn_data_folder = 'with_newlines'
-result_file = 'nn_data/'+nn_data_folder+'/all_nn_data'+'_'+str(vocab_size)+'_with_tf-idf-complete_1'
+result_file = 'nn_data/'+nn_data_folder+'/all_nn_data'+'_'+str(vocab_size)+'_with_tf-idf-complete_3'
 result_file_for_ids = result_file + '_ids'
 
 if os.path.exists(result_file):

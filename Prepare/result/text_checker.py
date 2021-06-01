@@ -11,17 +11,17 @@ vocab_size = 15000
 tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
 vocab_size = len(tokenizer.vocab())
 device = torch.device('cuda')
-TEXT_CHUNK_SIZE = 200
 
-nn = MyNN(vocab_size, embedding_size=64)
+nn = MyNN(vocab_size, layers_num=7, embedding_size=64)
 
-nn.load_state_dict(torch.load('./nn_models/nn_model_15000_tf-idf_1622470285.0365074.pth'))
+nn.load_state_dict(torch.load('./nn_models/nn_model_15000_tf-idf_1622579233.316039.pth'))
 nn.eval()
 nn.to(device)
 
 chunks = []
 filename = 'temp'
 encoding = 'utf-8'
+newline_token = '<n>'
 
 try:
     with open(file='check_data/'+filename+'.txt', mode='r', encoding='utf-8') as f:
@@ -31,6 +31,7 @@ except UnicodeDecodeError:
         encoding = 'cp1251'
         text = f.read()
 
+text = text.replace('\n', newline_token)
 chunks.append(text)
 tokenized_chunks = tokenizer.encode(chunks)
 symbol_tokenized_chunks = list(map(lambda chunk: [tokenizer.id_to_subword(token) for token in chunk], tokenized_chunks))
@@ -52,15 +53,17 @@ lightness = 50
 
 with open('check_data/results/'+filename+'_'+str(time())+'.html', mode='w', encoding=encoding) as resf:
     resf.write('<html>')
+    resf.write('<div style="white-space: pre-line;">')
 
     for i in range(len(pred)):
         cur_pred = pred[i].item()
-        token = symbol_tokenized_chunks[i].replace('\u2581', ' ')
+        token = symbol_tokenized_chunks[i].replace('\u2581', ' ').replace(newline_token, '\n')
 
         resf.write(f'<span style="color:hsl({hue}, {saturation}%, {cur_pred*100}%);">')
         resf.write(token)
         resf.write('</span>')
 
+    resf.write('</div>')
     resf.write('</html>')
 
 

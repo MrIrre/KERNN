@@ -19,7 +19,7 @@ from utils import train_eval_loop
 
 DEVICE = 'cuda'
 assert DEVICE in {'cpu', 'cuda'}
-yttm.BPE
+
 vocab_size = 15000
 
 tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
@@ -28,7 +28,7 @@ tokenizer = yttm.BPE(constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
 
 vocab_size = len(tokenizer.vocab())
 
-filename = 'all_nn_data_15000_with_tf-idf-final_3'
+filename = 'all_nn_data_15000_with_tf-idf-complete_3'
 train_file_path = 'nn_data/result_data/train/' + filename + '_train_shuffled'
 val_file_path = 'nn_data/result_data/validation/' + filename + '_val_shuffled'
 test_file_path = 'nn_data/result_data/test/' + filename + '_test_shuffled'
@@ -105,7 +105,7 @@ test_file_path = 'nn_data/result_data/test/' + filename + '_test_shuffled'
 # print(f'Line offsets length = {len(line_offsets)}')
 # print(f'Все позиции строк из файла записаны. Количество строк - {line_index}')
 
-nn = MyNN(vocab_size, embedding_size=64)
+nn = MyNN(vocab_size, layers_num=7, embedding_size=64)
 print('Количество параметров', sum(np.product(t.shape) for t in nn.parameters()))
 
 train_dataset = WikiTextLazyDataset(filepath=train_file_path)
@@ -126,7 +126,7 @@ def lr_scheduler(optim):
 
 
 device = torch.device(DEVICE)
-nn.load_state_dict(torch.load('./nn_models/nn_model_15000_tf-idf_1622456520.161046.pth'))
+nn.load_state_dict(torch.load('./nn_models/nn_model_15000_tf-idf_1622552114.0006692.pth'))
 # nn.eval()
 # nn.to(device)
 

@@ -21,28 +21,39 @@
 #             print('----------------------------')
 
 
-import constants
-import youtokentome as yttm
+# import constants
+# import youtokentome as yttm
+#
+# vocab_size = 15000
+#
+# tokenizer = yttm.BPE('result/' + constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
+#
+# string = """Hello!
+# Second line!
+# Third LINE!!!
+# AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# """
+#
+# print('BEGIN:')
+# print(string)
+# print('-------------------------------')
+# codes = tokenizer.encode([string])
+# result = tokenizer.decode(codes[0])
+# print('AFTER:')
+# print(result[0])
 
-vocab_size = 15000
 
-tokenizer = yttm.BPE('result/' + constants.BPE_MODEL_FILENAME + '_' + str(vocab_size))
+import matplotlib.pyplot as plt
 
-string = """Hello!
-Second line!
-Third LINE!!!
-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-"""
+a = [[1, 2, 3], [4, 5, 6]]
 
-print('BEGIN:')
-print(string)
-print('-------------------------------')
-codes = tokenizer.encode([string])
-result = tokenizer.decode(codes[0])
-print('AFTER:')
-print(result[0])
-
-
+for i, m in enumerate(a):
+    plt.plot(m, label=str(m))
+    plt.title(i)
+    plt.xlabel('x' + str(i))
+    plt.ylabel('y' + str(i))
+    plt.legend()
+    plt.show()
 
 
 
